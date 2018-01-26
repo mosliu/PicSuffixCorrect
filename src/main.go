@@ -1,13 +1,15 @@
 package main
 
 import (
-    "github.com/urfave/cli"
-    "github.com/fatih/color"
-    "time"
     "os"
-    "encoding/binary"
     "path/filepath"
     "strings"
+    "time"
+
+    "github.com/fatih/color"
+    "github.com/urfave/cli"
+
+    "picsuffix"
 )
 
 func main() {
@@ -21,14 +23,16 @@ func main() {
             Email: "mogo@liuxuan.net",
         },
     }
-    app.Copyright = "(c) 2017 Dreamaker Studio"
-    app.Usage = "Tools box for daily usage"
-    app.ArgsUsage = "[args and such]"
+    app.Copyright = "(c) 2018 Dreamaker Studio"
+    app.Usage = "Tools for check if the image file's suffix is right.Can be applied to a directory"
+    app.UsageText = "Example: picsuffix ./aaa.jpg or picsuffix ./jpg/"
+    app.ArgsUsage = "<filename>"
     app.Action = func(c *cli.Context) error {
         var target string
         if c.NArg() > 0 {
             target = c.Args().Get(0)
         } else {
+            color.Red("无输入，程序退出")
             target = "./"
         }
         fi, err := os.Stat(target)
@@ -75,7 +79,7 @@ func judgeAndRename(target string) {
     //color.Green(filename + ",oldsuffix:" + oldsuffix)
     switch oldsuffix {
     case ".png", ".jpg", ".bmp", ".tiff", ".tif", ".gif", ".psd":
-        suffix := judgePicFileType(target)
+        suffix := picsuffix.JudgePicFileType(target)
         if suffix != "" {
             suffix = "." + suffix
         } else {
@@ -90,59 +94,11 @@ func judgeAndRename(target string) {
         }
     default:
         color.Green("Skip file:" + filename)
-
     }
 }
 
-func judgePicFileType(path string) string {
-    fi, err := os.Open(path)
-    defer fi.Close()
-    checkErr(err)
-    const NBUF = 32
-    var buf [NBUF]byte
-    nr, err := fi.Read(buf[:])
-    checkErr(err)
-    if nr > 0 {
-        //startcode := binary.LittleEndian.Uint16(buf[0:4])
-        cutbuf := buf[0:8]
-        fileHead := binary.BigEndian.Uint64(cutbuf)
-        switch fileHead {
-        //https://www.filesignatures.net/index.php?search=gif&mode=EXT
-        case 0x89504E470D0A1A0A:
-            //	89 50 4E 47 0D 0A 1A 0A
-            return "png"
-        }
-        cutbuf[7] = 0
-        cutbuf[6] = 0
-        cutbuf[5] = 0
-        cutbuf[4] = 0
-        //四位的头
-        fileHead = binary.BigEndian.Uint64(cutbuf)
-        switch fileHead {
-        case 0x4749463800000000:
-            return "gif"
-        case 0x3842505300000000:
-            return "psd"
-        case 0xFFD8FFE000000000, 0xFFD8FFE100000000, 0xFFD8FFE800000000:
-            return "jpg"
-        case 0xFFD8FFE200000000, 0xFFD8FFE300000000:
-            return "jpg"
-        case 0x49492A0000000000, 0x4D4D002A00000000, 0x4D4D002B00000000:
-            return "tiff"
-        }
-        //三位的
-        cutbuf[3] = 0
-        fileHead = binary.BigEndian.Uint64(cutbuf)
-        switch fileHead {
-        case 0x4920490000000000:
-            return "tiff"
-        }
-        cutbuf[2] = 0
-        fileHead = binary.BigEndian.Uint64(cutbuf)
-        switch fileHead {
-        case 0x424D000000000000:
-            return "BMP"
-        }
+func checkErr(err error) {
+    if err != nil {
+        panic(err)
     }
-    return ""
 }
