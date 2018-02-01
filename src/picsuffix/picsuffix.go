@@ -5,6 +5,9 @@ import (
     "encoding/binary"
 )
 
+// Used for get a image file's suffix
+// return a suffix string in lower case,
+// example: "png" or "jpg"
 func JudgePicFileType(path string) string {
     fi, err := os.Open(path)
     defer fi.Close()
@@ -52,7 +55,7 @@ func JudgePicFileType(path string) string {
         fileHead = binary.BigEndian.Uint64(cutbuf)
         switch fileHead {
         case 0x424D000000000000:
-            return "BMP"
+            return "bmp"
         }
     }
     return ""
