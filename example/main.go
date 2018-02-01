@@ -9,7 +9,7 @@ import (
     "github.com/fatih/color"
     "github.com/urfave/cli"
 
-    "picsuffix"
+    "github.com/mosliu/picsuffix"
 )
 
 func main() {
